@@ -3,6 +3,7 @@
 ;
 ; pc-analog input driver
 
+.include "geossym.inc"
 .include "jumptab.inc"
 
 .segment "inputdrv"
@@ -80,8 +81,8 @@ LFEDA:  sta     $02
 	lda     #$00
 	sta     $03
 	sta     $05
-	ldx     #$02
-	ldy     #$04
+	ldx     #r0
+	ldy     #r1
 	jsr     Ddiv
 	lda     $3A
 	sec
@@ -106,8 +107,8 @@ LFF11:  sec
 	lda     #$00
 	sta     $03
 	sta     $05
-	ldx     #$02
-	ldy     #$04
+	ldx     #r0
+	ldy     #r1
 	jsr     Ddiv
 	lda     $3A
 	clc
@@ -139,8 +140,8 @@ LFF52:  sta     $02
 	lda     #$00
 	sta     $03
 	sta     $05
-	ldx     #$02
-	ldy     #$04
+	ldx     #r0
+	ldy     #r1
 	jsr     Ddiv
 	lda     $3C
 	sec
@@ -161,8 +162,8 @@ LFF81:  sec
 	lda     #$00
 	sta     $03
 	sta     $05
-	ldx     #$02
-	ldy     #$04
+	ldx     #r0
+	ldy     #r1
 	jsr     Ddiv
 	lda     $3C
 	clc
