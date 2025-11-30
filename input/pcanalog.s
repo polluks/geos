@@ -5,6 +5,7 @@
 
 .include "geossym.inc"
 .include "jumptab.inc"
+.include "c64.inc"
 
 .segment "inputdrv"
 
@@ -19,17 +20,17 @@ SetMouse:
 	rts
 .endif
 
-LFE89:  .byte   $00
-LFE8A:  .byte   $2D
-LFE8B:  .byte   $33
-LFE8C:  .byte   $39
-LFE8D:  .byte   $07
-LFE8E:  .byte   $05
-LFE8F:  .byte   $39
-LFE90:  .byte   $3E
-LFE91:  .byte   $43
-LFE92:  .byte   $08
-LFE93:  .byte   $04
+LFE89:	.byte   $00
+LFE8A:	.byte   $2D
+LFE8B:	.byte   $33
+LFE8C:	.byte   $39
+LFE8D:	.byte   $07
+LFE8E:	.byte   $05
+LFE8F:	.byte   $39
+LFE90:	.byte   $3E
+LFE91:	.byte   $43
+LFE92:	.byte   $08
+LFE93:	.byte   $04
 
 _MouseInit:
 LFE94:  lda     #$00
@@ -39,54 +40,54 @@ LFE94:  lda     #$00
 	lda     #$00
 	sta     $3C
 _SlowMouse:
-LFEA0:  rts
+rts0:   rts
 
 _UpdateMouse:
 LFEA1:  bit     $30
-	bpl     LFEA0
+	bpl     rts0
 	lda     $01
 	pha
 	lda     #$35
 	sta     $01
-	lda     $DC00
+	lda     cia1base+0
 	pha
-	lda     $DC02
+	lda     cia1base+2
 	pha
-	lda     $DC03
+	lda     cia1base+3
 	pha
 	lda     #$FF
-	sta     $DC02
+	sta     cia1base+2
 	lda     #$40
-	sta     $DC00
+	sta     cia1base+0
 	ldx     #$66
 LFEC4:  nop
 	nop
 	nop
 	dex
 	bne     LFEC4
-	lda     $D419
+	lda     sidbase+$19
 	cmp     LFE8A
 	bmi     LFEDA
 	cmp     LFE8C
 	bpl     LFF11
 	jmp     LFF42
 
-LFEDA:  sta     $02
+LFEDA:  sta     r0L
 	lda     LFE8B
 	sec
-	sbc     $02
-	sta     $02
+	sbc     r0L
+	sta     r0L
 	lda     LFE8D
-	sta     $04
+	sta     r1L
 	lda     #$00
-	sta     $03
-	sta     $05
+	sta     r0H
+	sta     r1H
 	ldx     #r0
 	ldy     #r1
 	jsr     Ddiv
 	lda     $3A
 	sec
-	sbc     $02
+	sbc     r0L
 	sta     $3A
 	lda     $3B
 	beq     LFF08
@@ -101,18 +102,18 @@ LFF08:  bcs     LFF05
 
 LFF11:  sec
 	sbc     LFE8B
-	sta     $02
+	sta     r0L
 	lda     LFE8E
-	sta     $04
+	sta     r1L
 	lda     #$00
-	sta     $03
-	sta     $05
+	sta     r0H
+	sta     r1H
 	ldx     #r0
 	ldy     #r1
 	jsr     Ddiv
 	lda     $3A
 	clc
-	adc     $02
+	adc     r0
 	sta     $3A
 	lda     $3B
 	adc     #$00
@@ -123,29 +124,29 @@ LFF11:  sec
 	bmi     LFF05
 	lda     #$3F
 	sta     $3A
-LFF42:  lda     $D41A
+LFF42:  lda     sidbase+$1A
 	cmp     LFE8F
 	bmi     LFF52
 	cmp     LFE91
 	bpl     LFF81
 	jmp     LFFAB
 
-LFF52:  sta     $02
+LFF52:  sta     r0L
 	lda     LFE90
 	sec
-	sbc     $02
-	sta     $02
+	sbc     r0L
+	sta     r0L
 	lda     LFE92
-	sta     $04
+	sta     r1L
 	lda     #$00
-	sta     $03
-	sta     $05
+	sta     r0H
+	sta     r1H
 	ldx     #r0
 	ldy     #r1
 	jsr     Ddiv
 	lda     $3C
 	sec
-	sbc     $02
+	sbc     r0
 	bcc     LFF7A
 	sta     $3C
 	jmp     LFFAB
@@ -156,18 +157,18 @@ LFF7A:  lda     #$00
 
 LFF81:  sec
 	sbc     LFE90
-	sta     $02
+	sta     r0L
 	lda     LFE93
-	sta     $04
+	sta     r1L
 	lda     #$00
-	sta     $03
-	sta     $05
+	sta     r0H
+	sta     r1H
 	ldx     #r0
 	ldy     #r1
 	jsr     Ddiv
 	lda     $3C
 	clc
-	adc     $02
+	adc     r0
 	cmp     #$C7
 	bcs     LFFA7
 	sta     $3C
@@ -176,9 +177,9 @@ LFF81:  sec
 LFFA7:  lda     #$C7
 	sta     $3C
 LFFAB:  lda     #$00
-	sta     $DC02
-	sta     $DC03
-	lda     $DC01
+	sta     cia1base+2
+	sta     cia1base+3
+	lda     cia1base+1
 	and     #$0C
 	cmp     LFE89
 	beq     LFFD0
@@ -194,11 +195,11 @@ LFFC7:  sta     $8505
 	ora     #$20
 	sta     $39
 LFFD0:  pla
-	sta     $DC03
+	sta     cia1base+3
 	pla
-	sta     $DC02
+	sta     cia1base+2
 	pla
-	sta     $DC00
+	sta     cia1base+0
 	pla
 	sta     $01
 	rts
