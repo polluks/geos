@@ -4,6 +4,7 @@
 ; pc-analog input driver
 
 .include "geossym.inc"
+.include "geosmac.inc"
 .include "jumptab.inc"
 .include "c64.inc"
 
@@ -20,44 +21,41 @@ SetMouse:
 	rts
 .endif
 
-LFE89:	.byte   $00
-LFE8A:	.byte   $2D
-LFE8B:	.byte   $33
-LFE8C:	.byte   $39
-LFE8D:	.byte   $07
-LFE8E:	.byte   $05
-LFE8F:	.byte   $39
-LFE90:	.byte   $3E
-LFE91:	.byte   $43
-LFE92:	.byte   $08
-LFE93:	.byte   $04
+lastF:	.byte   $00
+xlow:	.byte   $2D
+xav:	.byte   $33
+xhigh:	.byte   $39
+xlstep:	.byte   $07
+xhstep:	.byte   $05
+ylow:	.byte   $39
+yav:	.byte   $3E
+yhigh:	.byte   $43
+ylstep:	.byte   $08
+yhstep:	.byte   $04
 
 _MouseInit:
-LFE94:  lda     #$00
+	lda     #$00
 	sta     $3B
 	lda     #$00
-	sta     $3A
+	sta     mouseXPos
 	lda     #$00
-	sta     $3C
+	sta     mouseYPos
 _SlowMouse:
 rts0:   rts
 
 _UpdateMouse:
-LFEA1:  bit     $30
+	bit     $30
 	bpl     rts0
 	lda     $01
 	pha
 	lda     #$35
 	sta     $01
-	lda     cia1base+0
-	pha
-	lda     cia1base+2
-	pha
-	lda     cia1base+3
-	pha
+	PushB   cia1base+0
+	PushB   cia1base+2
+	PushB   cia1base+3
 	lda     #$FF
 	sta     cia1base+2
-	lda     #$40
+	lda     #%01000000
 	sta     cia1base+0
 	ldx     #$66
 LFEC4:  nop
@@ -66,18 +64,17 @@ LFEC4:  nop
 	dex
 	bne     LFEC4
 	lda     sidbase+$19
-	cmp     LFE8A
-	bmi     LFEDA
-	cmp     LFE8C
-	bpl     LFF11
-	jmp     LFF42
+	cmp     xlow
+	bmi     XLO
+	cmp     xhigh
+	bpl     XHI
+	jmp     ReadY
 
-LFEDA:  sta     r0L
-	lda     LFE8B
-	sec
-	sbc     r0L
+XLO:	sta     r0L
+	lda     xav
+	sub     r0L
 	sta     r0L
-	lda     LFE8D
+	lda     xlstep
 	sta     r1L
 	lda     #$00
 	sta     r0H
@@ -85,25 +82,23 @@ LFEDA:  sta     r0L
 	ldx     #r0
 	ldy     #r1
 	jsr     Ddiv
-	lda     $3A
-	sec
-	sbc     r0L
-	sta     $3A
+	lda     mouseXPos
+	sub     r0L
+	sta     mouseXPos
 	lda     $3B
 	beq     LFF08
 	sbc     #$00
 	sta     $3B
-LFF05:  jmp     LFF42
+LFF05:  jmp     ReadY
 
 LFF08:  bcs     LFF05
 	lda     #$00
-	sta     $3A
-	jmp     LFF42
+	sta     mouseXPos
+	jmp     ReadY
 
-LFF11:  sec
-	sbc     LFE8B
+XHI:	sub     xav
 	sta     r0L
-	lda     LFE8E
+	lda     xhstep
 	sta     r1L
 	lda     #$00
 	sta     r0H
@@ -111,32 +106,31 @@ LFF11:  sec
 	ldx     #r0
 	ldy     #r1
 	jsr     Ddiv
-	lda     $3A
+	lda     mouseXPos
 	clc
 	adc     r0
-	sta     $3A
+	sta     mouseXPos
 	lda     $3B
 	adc     #$00
 	sta     $3B
 	beq     LFF05
-	lda     $3A
+	lda     mouseXPos
 	cmp     #$40
 	bmi     LFF05
 	lda     #$3F
-	sta     $3A
-LFF42:  lda     sidbase+$1A
-	cmp     LFE8F
-	bmi     LFF52
-	cmp     LFE91
-	bpl     LFF81
-	jmp     LFFAB
+	sta     mouseXPos
+ReadY:	lda     sidbase+$1A
+	cmp     ylow
+	bmi     YLO
+	cmp     yhigh
+	bpl     YHI
+	jmp     ReadF
 
-LFF52:  sta     r0L
-	lda     LFE90
-	sec
-	sbc     r0L
+YLO:	sta     r0L
+	lda     yav
+	sub     r0L
 	sta     r0L
-	lda     LFE92
+	lda     ylstep
 	sta     r1L
 	lda     #$00
 	sta     r0H
@@ -144,21 +138,19 @@ LFF52:  sta     r0L
 	ldx     #r0
 	ldy     #r1
 	jsr     Ddiv
-	lda     $3C
-	sec
-	sbc     r0
+	lda     mouseYPos
+	sub     r0
 	bcc     LFF7A
-	sta     $3C
-	jmp     LFFAB
+	sta     mouseYPos
+	jmp     ReadF
 
 LFF7A:  lda     #$00
-	sta     $3C
-	jmp     LFFAB
+	sta     mouseYPos
+	jmp     ReadF
 
-LFF81:  sec
-	sbc     LFE90
+YHI:	sub     yav
 	sta     r0L
-	lda     LFE93
+	lda     yhstep
 	sta     r1L
 	lda     #$00
 	sta     r0H
@@ -166,40 +158,37 @@ LFF81:  sec
 	ldx     #r0
 	ldy     #r1
 	jsr     Ddiv
-	lda     $3C
+	lda     mouseYPos
 	clc
 	adc     r0
 	cmp     #$C7
 	bcs     LFFA7
-	sta     $3C
-	jmp     LFFAB
+	sta     mouseYPos
+	jmp     ReadF
 
 LFFA7:  lda     #$C7
-	sta     $3C
-LFFAB:  lda     #$00
+	sta     mouseYPos
+ReadF:	lda     #$00
 	sta     cia1base+2
 	sta     cia1base+3
 	lda     cia1base+1
-	and     #$0C
-	cmp     LFE89
+	and     #%00001100
+	cmp     lastF
 	beq     LFFD0
-	sta     LFE89
+	sta     lastF
 	asl     a
 	asl     a
 	asl     a
 	asl     a
 	bpl     LFFC7
 	asl     a
-LFFC7:  sta     $8505
+LFFC7:  sta     mouseData
 	lda     $39
 	ora     #$20
 	sta     $39
-LFFD0:  pla
-	sta     cia1base+3
-	pla
-	sta     cia1base+2
-	pla
-	sta     cia1base+0
+LFFD0:  PopB    cia1base+3
+	PopB    cia1base+2
+	PopB    cia1base+0
 	pla
 	sta     $01
 	rts
