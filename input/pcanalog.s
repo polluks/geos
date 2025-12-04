@@ -3,6 +3,7 @@
 ;
 ; pc-analog input driver
 
+.include "const.inc"
 .include "geossym.inc"
 .include "geosmac.inc"
 .include "jumptab.inc"
@@ -38,18 +39,16 @@ _MouseInit:
 	sta     $3B
 	lda     #$00
 	sta     mouseXPos
-	lda     #$00
-	sta     mouseYPos
+	LoadB   mouseYPos, NULL
 _SlowMouse:
 rts0:   rts
 
 _UpdateMouse:
 	bit     $30
 	bpl     rts0
-	lda     $01
-	pha
+	PushB   CPU_DATA
 	lda     #$35
-	sta     $01
+	sta     CPU_DATA
 	PushB   cia1base+0
 	PushB   cia1base+2
 	PushB   cia1base+3
@@ -74,10 +73,8 @@ XLO:	sta     r0L
 	lda     xav
 	sub     r0L
 	sta     r0L
-	lda     xlstep
-	sta     r1L
-	lda     #$00
-	sta     r0H
+	MoveB   xlstep, r1L
+	LoadB   r0H, NULL
 	sta     r1H
 	ldx     #r0
 	ldy     #r1
@@ -92,23 +89,19 @@ XLO:	sta     r0L
 LFF05:  jmp     ReadY
 
 LFF08:  bcs     LFF05
-	lda     #$00
-	sta     mouseXPos
+	LoadB   mouseXPos, NULL
 	jmp     ReadY
 
 XHI:	sub     xav
 	sta     r0L
-	lda     xhstep
-	sta     r1L
-	lda     #$00
-	sta     r0H
+	MoveB   xhstep, r1L
+	LoadB   r0H, NULL
 	sta     r1H
 	ldx     #r0
 	ldy     #r1
 	jsr     Ddiv
 	lda     mouseXPos
-	clc
-	adc     r0
+	add     r0
 	sta     mouseXPos
 	lda     $3B
 	adc     #$00
@@ -130,10 +123,8 @@ YLO:	sta     r0L
 	lda     yav
 	sub     r0L
 	sta     r0L
-	lda     ylstep
-	sta     r1L
-	lda     #$00
-	sta     r0H
+	MoveB   ylstep, r1L
+	LoadB   r0H, NULL
 	sta     r1H
 	ldx     #r0
 	ldy     #r1
@@ -144,32 +135,27 @@ YLO:	sta     r0L
 	sta     mouseYPos
 	jmp     ReadF
 
-LFF7A:  lda     #$00
-	sta     mouseYPos
+LFF7A:  LoadB   mouseYPos, NULL
 	jmp     ReadF
 
 YHI:	sub     yav
 	sta     r0L
-	lda     yhstep
-	sta     r1L
-	lda     #$00
-	sta     r0H
+	MoveB   yhstep, r1L
+	LoadB   r0H, NULL
 	sta     r1H
 	ldx     #r0
 	ldy     #r1
 	jsr     Ddiv
 	lda     mouseYPos
-	clc
-	adc     r0
-	cmp     #$C7
+	add     r0
+	cmp     #199
 	bcs     LFFA7
 	sta     mouseYPos
 	jmp     ReadF
 
-LFFA7:  lda     #$C7
+LFFA7:  lda     #199
 	sta     mouseYPos
-ReadF:	lda     #$00
-	sta     cia1base+2
+ReadF:	LoadB   cia1base+2, NULL
 	sta     cia1base+3
 	lda     cia1base+1
 	and     #%00001100
@@ -189,6 +175,5 @@ LFFC7:  sta     mouseData
 LFFD0:  PopB    cia1base+3
 	PopB    cia1base+2
 	PopB    cia1base+0
-	pla
-	sta     $01
+	PopB    CPU_DATA
 	rts
