@@ -3,237 +3,191 @@
 ;
 ; Koala pad input driver
 
-.include "const.inc"
+.include "const.inc" 
 .include "geossym.inc"
-.include "geosmac.inc"
+.include "geosmac.inc" 
 .include "c64.inc"
 
-.segment "inputdrv"
+	.segment "inputdrv"
 
-MouseInit:
-	jmp _MouseInit
-SlowMouse:
-	jmp _SlowMouse
-UpdateMouse:
-	jmp _UpdateMouse
-SetMouse:
+	jmp     _MouseInit
 
-dat0:
-	.byte 0
-dat1:
-	.byte 0
-dat2:
-	.byte 0
-dat3:
-	.byte 0
-dat4:
-	.byte 0
-dat5:
-	.byte 0
-dat6:
-	.byte 0
-dat7:
-	.byte 0
+	jmp     _SlowMouse
 
+	jmp     _UpdateMouse
+
+dat0:  .byte 0
+dat1:  .byte 0
+dat2:  .byte 0
+dat3:  .byte 0
+dat4:  .byte 0
+dat5:  .byte 0
+dat6:  .byte 0
+	brk
 _MouseInit:
-	lda #$00
-	sta $3b
-	lda #$08
-	sta $3a
-	sta $3c
+	lda     #$00
+	sta     mouseXPos+1
+	lda     #$08
+	sta     mouseXPos
+	sta     mouseYPos
 	rts
 
 _SlowMouse:
-	bit $30
-	bmi _UpdateMouse
-	jmp $ff36
+	bit     mouseOn
+	bmi     _UpdateMouse
+	jmp     LFF36
 
-_08a2:
 _UpdateMouse:
-	lda $01
-	pha
-	lda #$35
-	sta $01
-	lda $dc02
-	pha
-	lda $dc03
-	pha
-	lda $dc00
-	pha
-	jsr $ff37
-	lda $fe8e
-	eor #$ff
-	sta $fe8e
-	bne _0927
-	jsr $ff5b
-	lda $d419
-	sec
-	sbc #$1f
-	bcs _08cf
-	lda #$00
-_08cf:
-	sta $02
-	lsr $02
-	lsr $02
-	lsr $02
-	sec
-	sbc $02
-	cmp #$0c
-	bcc _0927
-	cmp #$ab
-	beq _08e4
-	bcs _0927
-_08e4:
-	sta $02
-	lda $d41a
-	cmp #$32
-	bcc _0927
-	cmp #$f9
-	beq _08f3
-	bcs _0927
-_08f3:
-	sta $03
-	lda $84b7
-	beq _08fd
-	jsr $ff6d
-_08fd:
-	lda #$00
-	sta $fe8f
-	lda $02
-	ldx $fe8a
-	ldy $fe8c
-	jsr $ffb1
-	sty $fe8c
-	stx $fe8a
-	lda $03
-	ldx $fe8b
-	ldy $fe8d
-	jsr $ffb1
-	sty $fe8d
-	stx $fe8b
-	jsr $ff85
-_0927:
+	PushB   CPU_DATA
+	LoadB   CPU_DATA, IO_IN
+	PushB   cia1base+2
+	PushB   cia1base+3
+	PushB   cia1base+0
+	jsr     LFF37
+	lda     dat5
+	eor     #$FF
+	sta     dat5
+	bne     LFF28
+	jsr     LFF5B
+	lda     sidbase+$19
+	sub     #$1F
+	bcs     LFED0
+	lda     #$00
+LFED0:  sta     r0
+	lsr     r0
+	lsr     r0
+	lsr     r0
+	sub     r0
+	cmp     #$0C
+	bcc     LFF28
+	cmp     #$AB
+	beq     LFEE5
+	bcs     LFF28
+LFEE5:  sta     r0
+	lda     sidbase+$1A
+	cmp     #$32
+	bcc     LFF28
+	cmp     #$F9
+	beq     LFEF4
+	bcs     LFF28
+LFEF4:  sta     r0H
+	lda     menuNumber
+	beq     LFEFE
+	jsr     LFF6D
+LFEFE:  lda     #$00
+	sta     dat6
+	lda     r0L
+	ldx     dat1
+	ldy     dat3
+	jsr     LFFB1
+	sty     dat3
+	stx     dat1
+	lda     r0H
+	ldx     dat2
+	ldy     dat4
+	jsr     LFFB1
+	sty     dat4
+	stx     dat2
+	jsr     LFF85
+LFF28:  PopB    cia1base+0
+	PopB    cia1base+3
+	PopB    cia1base+2
 	pla
-	sta $dc00
-	pla
-	sta $dc03
-	pla
-	sta $dc02
-	pla
-	sta $01
-	rts
+	.byte   $85
+LFF36:  .byte   CPU_DATA
+LFF37:  rts
 
-_0937:
-	lda #$00
-	sta $dc02
-	sta $dc03
-	lda $dc01
-	and #$04
-	cmp $fe89
-	beq _095a
-	sta $fe89
-	asl a
-	asl a
-	asl a
-	asl a
-	asl a
-	sta $8505
-	lda $39
-	ora #$20
-	sta $39
-_095a:
-	rts
+	lda     #$00
+	sta     cia1base+2
+	sta     cia1base+3
+	lda     cia1base+1
+	and     #$04
+	cmp     dat0
+	beq     LFF5B
+	sta     dat0
+	asl     a
+	asl     a
+	asl     a
+	asl     a
+	asl     a
+	sta     mouseData
+	lda     pressFlag
+	ora     #$20
+	sta     pressFlag
+LFF5B:  rts
 
-_095b:
-	lda #$ff
-	sta $dc02
-	lda #$40
-	sta $dc00
-	ldx #$6e
-_0967:
-	nop
+	lda     #$FF
+	sta     cia1base+2
+	lda     #$40
+	sta     cia1base+0
+	ldx     #$6E
+Wait:   nop
 	nop
 	dex
-	bne _0967
-	rts
+	bne     Wait
+LFF6D:  rts
 
-_096d:
-	lda $3b
-	sta $04
-	lda $3a
-	ror $04
-	ror a
-	clc
-	adc #$0c
-	sta $fe8a
-	lda $3c
-	clc
-	adc #$32
-	sta $fe8b
-	rts
+	lda     mouseXPos+1
+	sta     r1
+	lda     mouseXPos
+	ror     r1
+	ror     a
+	add     #$0C
+	sta     dat1
+	lda     mouseYPos
+	add     #$32
+	sta     dat2
+LFF85:  rts
 
-_0985:
-	bit $fe8f
-	bmi _09b0
-	ldx #$00
-	lda $fe8a
-	asl a
-	bcc _0993
+	bit     dat6
+	bmi     LFFB1
+	ldx     #$00
+	lda     dat1
+	asl     a
+	bcc     LFF94
 	inx
-_0993:
-	stx $3b
-	and #$fe
-	sta $3a
+LFF94:  stx     mouseXPos+1
+	and     #$FE
+	sta     mouseXPos
 	sec
-	lda $3a
-	sbc #$18
-	sta $3a
-	lda $3b
-	sbc #$00
-	sta $3b
-	lda $fe8b
-	sec
-	sbc #$32
-	and #$fe
-	sta $3c
-_09b0:
-	rts
+	lda     mouseXPos
+	sbc     #$18
+	sta     mouseXPos
+	lda     mouseXPos+1
+	sbc     #$00
+	sta     mouseXPos+1
+	lda     dat2
+	sub     #$32
+	and     #$FE
+	sta     mouseYPos
+LFFB1:  rts
 
-_09b1:
-	stx $02
+	stx     r0
 	tax
-	sec
-	sbc $02
-	sta $02
-	bpl _09c0
-	eor #$ff
-	clc
-	adc #$01
-_09c0:
-	cmp #$06
-	bcc _09cd
-	lda #$80
-	ora $fe8f
-	sta $fe8f
-	rts
-_09cd:
+	sub     r0
+	sta     r0
+	bpl     LFFC1
+	eor     #$FF
+	add     #$01
+LFFC1:  cmp     #$06
+	bcc     LFFCE
+	lda     #$80
+	ora     dat6
+	sta     dat6
 	rts
 
-_09ce:
+LFFCE:  rts
+
 	tya
-	ldy $02
-	bmi _09db
-	beq _09e7
-	cmp #$00
-	bpl _09e7
-	bmi _09df
-	cmp #$00
-_09db:
-	bmi _09e7
-_09df:
-	lda #$80
-	ora $fe8f
-	sta $fe8f
-_09e7:
-	rts
-
+	ldy     r0
+	bmi     LFFDE
+	beq     LFFE8
+	cmp     #$00
+	bpl     LFFE8
+	bmi     LFFE0
+	cmp     #$00
+LFFDE:  bmi     LFFE8
+LFFE0:  lda     #$80
+	ora     dat6
+	sta     dat6
+LFFE8:  rts
