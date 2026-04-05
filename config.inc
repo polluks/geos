@@ -131,6 +131,10 @@ config_inc = 1
 	; GEOS2000
 	; bug - when 0 no blinking in menu
 	;newMenu_5 = 1
+
+	; RTC driver to set date&time upon boot
+	;rtc_Ultimate2Plus = 1
+
 .endif
 
 ; Feel (almost) free to change values below:
@@ -161,6 +165,10 @@ useRamExp = 1
 REUPresent = 1
 .endif
 
+.if .defined(rtc_Ultimate2Plus)
+useRTC = 1
+.endif
+
 .ifdef traps
 	trap1 = 1
 	trap2 = 1
@@ -168,7 +176,11 @@ REUPresent = 1
 
 .if .defined(drv1541)
 DRV_TYPE = 1 ; DRV_1541
+.elseif .defined(drv1541parallel)
+DRV_TYPE = 1; DRV_1541
 .elseif .defined(drv1571)
+DRV_TYPE = 2; DRV_1571
+.elseif .defined(drv1571burst)
 DRV_TYPE = 2; DRV_1571
 .elseif .defined(drv1581)
 DRV_TYPE = 3; DRV_1581

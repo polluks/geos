@@ -17,7 +17,7 @@ else
 D64_TEMPLATE = GEOS64.D64
 endif
 
-ASFLAGS      = -I inc -I .
+ASFLAGS      = -I inc -I . --cpu 6502X
 
 # code that is in front bank of all variants
 KERNAL_SOURCES= \
@@ -145,6 +145,7 @@ ifneq ($(VARIANT), bsw128)
 	kernal/ramexp/ramexp1.s \
 	kernal/ramexp/ramexp2.s \
 	kernal/rename.s \
+	kernal/rtc/rtc.s \
 	kernal/tobasic/tobasic1.s
 endif
 
@@ -233,7 +234,9 @@ endif
 
 DRIVER_SOURCES= \
 	drv/drv1541.bin \
+	drv/drv1541parallel.bin \
 	drv/drv1571.bin \
+	drv/drv1571burst.bin \
 	drv/drv1581.bin \
 	input/joydrv.bin \
 	input/amigamse.bin \
@@ -269,7 +272,9 @@ PREFIXED_RELOCATOR_OBJS = $(addprefix $(BUILD_DIR)/, $(RELOCATOR_OBJS))
 ALL_BINS= \
 	$(BUILD_DIR)/kernal/kernal.bin \
 	$(BUILD_DIR)/drv/drv1541.bin \
+	$(BUILD_DIR)/drv/drv1541parallel.bin \
 	$(BUILD_DIR)/drv/drv1571.bin \
+	$(BUILD_DIR)/drv/drv1571burst.bin \
 	$(BUILD_DIR)/drv/drv1581.bin \
 	$(BUILD_DIR)/input/joydrv.bin \
 	$(BUILD_DIR)/input/amigamse.bin \
@@ -290,6 +295,12 @@ regress:
 	@echo "********** Building variant 'bsw'"
 	@$(MAKE) VARIANT=bsw all
 	./regress.sh bsw
+	@echo "********** Building variant 'gateway'"
+	@$(MAKE) VARIANT=gateway all
+	./regress.sh gateway
+	@echo "********** Building variant 'bsw128'"
+	@$(MAKE) VARIANT=bsw128 all
+	./regress.sh bsw128
 	@echo "********** Building variant 'wheels'"
 	@$(MAKE) VARIANT=wheels all
 	./regress.sh wheels
@@ -307,7 +318,7 @@ $(BUILD_DIR)/$(D64_RESULT): $(BUILD_DIR)/kernal_compressed.prg
 	else \
 		echo format geos,00 d64 $@ | $(C1541) >/dev/null; \
 		echo write $< geos128 | $(C1541) $@ >/dev/null; \
-		if [ -e $(DESKTOP_CVT) ]; then echo geoswrite $(DESKTOP_CVT) | $(C1541) $@; fi >/dev/null; \
+		if [ -e "$(DESKTOP_CVT)" ]; then echo geoswrite "$(DESKTOP_CVT)" | $(C1541) $@; fi >/dev/null; \
 		echo \*\*\* Created fresh $@.; \
 	fi;
 else
@@ -379,8 +390,14 @@ endif
 $(BUILD_DIR)/drv/drv1541.bin: $(BUILD_DIR)/drv/drv1541.o drv/drv1541.cfg $(DEPS)
 	$(LD) -C drv/drv1541.cfg $(BUILD_DIR)/drv/drv1541.o -o $@
 
+$(BUILD_DIR)/drv/drv1541parallel.bin: $(BUILD_DIR)/drv/drv1541parallel.o drv/drv1541parallel.cfg $(DEPS)
+	$(LD) -C drv/drv1541parallel.cfg -m $(BUILD_DIR)/drv/drv1541parallel.map $(BUILD_DIR)/drv/drv1541parallel.o -o $@
+
 $(BUILD_DIR)/drv/drv1571.bin: $(BUILD_DIR)/drv/drv1571.o drv/drv1571.cfg $(DEPS)
 	$(LD) -C drv/drv1571.cfg $(BUILD_DIR)/drv/drv1571.o -o $@
+
+$(BUILD_DIR)/drv/drv1571burst.bin: $(BUILD_DIR)/drv/drv1571burst.o drv/drv1571burst.cfg $(DEPS)
+	$(LD) -C drv/drv1571burst.cfg $(BUILD_DIR)/drv/drv1571burst.o -o $@
 
 $(BUILD_DIR)/drv/drv1581.bin: $(BUILD_DIR)/drv/drv1581.o drv/drv1581.cfg $(DEPS)
 	$(LD) -C drv/drv1581.cfg $(BUILD_DIR)/drv/drv1581.o -o $@
